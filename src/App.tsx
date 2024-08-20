@@ -1,33 +1,66 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
+const randomSurpriseSelector = (options: string[]) => {
+  const randomIndex = Math.floor(Math.random() * options.length);
+  return options[randomIndex];
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [error, setError] = useState('Something Went Wrong! ');
+  const [value, setValue] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  // surprise question options
+  const options = [
+    'When is new years ?',
+    'When is halloween ?',
+    'When is thanksgiving ?',
+  ];
+
+  const getResponse = async (question: string) => {
+    if (!value) {
+      setError('Please ask a question');
+      return;
+    }
+
+    try {
+      const options = {
+        method: 'POST',
+        body: JSON.stringify({
+          history: chatHistory,
+          message: value
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+
+      const response = await fetch('http://localhost:5000/gemini', options);
+      const data = await response.text();
+
+      console.log('my data', data);
+
+    } catch (e: unknown) {
+      console.log(e);
+      setError('Something went wrong');
+    }
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <button onClick={
+        () => {
+          const answer = randomSurpriseSelector(options);
+          setError('');
+          setValue(answer);
+        }
+      }>Suprise me</button>
+      <input type="text" name="" id="" placeholder="when is new years ?" value={value} />
+      {!error && <button
+        onClick={() => getResponse(value)}
+      >Askme</button> || <button>Clear</button>}
+      <p className="answer">{answer}</p>
     </>
   )
 }
