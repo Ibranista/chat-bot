@@ -10,7 +10,12 @@ function App() {
   const [error, setError] = useState('Something Went Wrong! ');
   const [value, setValue] = useState('');
   const [answer, setAnswer] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
+  const [chatHistory, setChatHistory] = useState<
+    {
+      role: string;
+      parts: { text: string }[];
+    }[]
+  >([]);
   // surprise question options
   const options = [
     'When is new years ?',
@@ -18,7 +23,7 @@ function App() {
     'When is thanksgiving ?',
   ];
 
-  const getResponse = async (question: string) => {
+  const getResponse = async () => {
     if (!value) {
       setError('Please ask a question');
       return;
@@ -38,15 +43,22 @@ function App() {
 
       const response = await fetch('http://localhost:5000/gemini', options);
       const data = await response.text();
-
-      console.log('my data', data);
-
+      setChatHistory(prevHistory => [...prevHistory, {
+        role: "user",
+        parts: [{ text: value }]
+      },
+      {
+        role: "model",
+        parts: [{ text: data }]
+      }
+      ]);
+      setAnswer(data);
+      console.log('setted data==>', data);
     } catch (e: unknown) {
       console.log(e);
       setError('Something went wrong');
     }
   }
-
   return (
     <>
       <button onClick={
@@ -56,9 +68,14 @@ function App() {
           setValue(answer);
         }
       }>Suprise me</button>
-      <input type="text" name="" id="" placeholder="when is new years ?" value={value} />
+      <input type="text" name="value" id="" placeholder="when is new years ?" value={value} onChange={
+        (e) => {
+          setValue(e.target.value);
+          setError('');
+        }
+      } />
       {!error && <button
-        onClick={() => getResponse(value)}
+        onClick={() => getResponse()}
       >Askme</button> || <button>Clear</button>}
       <p className="answer">{answer}</p>
     </>
